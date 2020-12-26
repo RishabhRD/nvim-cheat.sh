@@ -9,7 +9,7 @@ local mapping = require'popfix.mappings'
 
 
 
-function M:new_cheat(disable_comment)
+function M:new_cheat(disable_comment, init_text)
     local obj = {}
     setmetatable(obj, self)
     local function createFloatingWindow()
@@ -139,7 +139,8 @@ function M:new_cheat(disable_comment)
 	    border = true,
 	    title = 'Search',
 	    highlight = 'Normal',
-	    prompt_highlight = 'Normal'
+	    prompt_highlight = 'Normal',
+	    init_text = init_text
 	},
 	mode = 'editor',
 	keymaps = {
@@ -160,7 +161,7 @@ function M:new_cheat(disable_comment)
 		['<C-c>'] = close_cancelled,
 		['<Esc>'] = close_cancelled,
 	    }
-	}
+	},
     }
     local popup = popfix:new(opts)
     -- This part should not be here! This is a popfix bug. Once solved it would
