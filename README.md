@@ -75,19 +75,19 @@ Keymaps for prompt are:
 
 In insert mode:
 
-- **<CR>** : Open result in floating window.
-- **<C-x>** : Open result in horizontal split.
-- **<C-t>** : Open result in a new tab.
-- **<C-v>** : Open result in a vertical split.
-- **<C-y>** : Open result in floating window.
-- **<C-c>** : Close window without any action.
+- **\<CR\>** : Open result in floating window.
+- **\<C-x\>** : Open result in horizontal split.
+- **\<C-t\>** : Open result in a new tab.
+- **\<C-v\>** : Open result in a vertical split.
+- **\<C-y\>** : Open result in floating window.
+- **\<C-c\>** : Close window without any action.
 
 In normal mode:
 
-- **<CR>** : Open result in floating window.
-- **<C-x>** : Open result in horizontal split.
-- **<C-t>** : Open result in a new tab.
-- **<C-v>** : Open result in a vertical split.
-- **<C-c>** : Close window without any action.
-- **<Esc>** : Close window without any action.
+- **\<CR\>** : Open result in floating window.
+- **\<C-x\>** : Open result in horizontal split.
+- **\<C-t\>** : Open result in a new tab.
+- **\<C-v\>** : Open result in a vertical split.
+- **\<C-c\>** : Close window without any action.
+- **\<Esc\>** : Close window without any action.
 - **q** : Close window without any action.
