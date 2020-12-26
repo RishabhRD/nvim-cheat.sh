@@ -14,6 +14,7 @@ special symbols for users.
 Install with your favorite plugin manager. For example with vim-plug:
 
 ```lua
+Plug 'RishabhRD/popfix'
 Plug 'RishabhRD/nvim-cheat.sh'
 ```
 
