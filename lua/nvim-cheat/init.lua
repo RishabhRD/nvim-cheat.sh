@@ -68,6 +68,10 @@ function M:new_cheat(disable_comment, init_text)
 	    on_exit = function()
 		obj.job = nil
 		vim.schedule(function()
+		    if api.nvim_buf_is_valid(obj.buffer) then
+			vim.lsp.diagnostic.clear(obj.buffer)
+			vim.lsp.stop_client(vim.lsp.get_active_clients(obj.buffer))
+		    end
 		    vim.cmd('echohl MoreMsg')
 		    vim.cmd(string.format([[echomsg '%s']],'Finished!!!'))
 		    vim.cmd('echohl None')

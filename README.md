@@ -7,7 +7,7 @@ special symbols for users.
 
 ## Screenshots
 
-![](https://user-images.githubusercontent.com/26287448/103150075-3e404d00-4796-11eb-9694-a05c0483ddbb.gif)
+![](https://user-images.githubusercontent.com/26287448/103154931-3ba71d00-47c1-11eb-9844-2c706e5d9b09.gif)
 
 ## Installation
 
