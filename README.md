@@ -1,8 +1,9 @@
 # nvim-cheat.sh
 
 [cheat.sh](https://github.com/chubin/cheat.sh) integration for neovim.
-nvim-cheat.sh provides elegant UI and remove complexity of url handling for
-cheat.sh.
+
+nvim-cheat.sh provides elegant UI and remove complexity of url handling and
+special symbols for users.
 
 ## Screenshots
 
