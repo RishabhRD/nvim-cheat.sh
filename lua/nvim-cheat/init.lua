@@ -7,7 +7,9 @@ local api = vim.api
 local floating_win = require'popfix.floating_win'
 local mapping = require'popfix.mappings'
 
-
+local function setBufferType(bufnr, type)
+    api.nvim_buf_set_option(bufnr, 'buftype', type)
+end
 
 function M:new_cheat(disable_comment, init_text)
     local obj = {}
@@ -28,6 +30,7 @@ function M:new_cheat(disable_comment, init_text)
 	api.nvim_win_set_option(win_buf.win, 'number', true)
 	obj.window = win_buf.win
 	obj.buffer = win_buf.buf
+	setBufferType(obj.buffer, 'nofile')
 	return win_buf
     end
     local function openCheat(line)
@@ -68,10 +71,6 @@ function M:new_cheat(disable_comment, init_text)
 	    on_exit = function()
 		obj.job = nil
 		vim.schedule(function()
-		    if api.nvim_buf_is_valid(obj.buffer) then
-			vim.lsp.diagnostic.clear(obj.buffer)
-			vim.lsp.stop_client(vim.lsp.get_active_clients(obj.buffer))
-		    end
 		    vim.cmd('echohl MoreMsg')
 		    vim.cmd(string.format([[echomsg '%s']],'Finished!!!'))
 		    vim.cmd('echohl None')
@@ -94,6 +93,7 @@ function M:new_cheat(disable_comment, init_text)
 	vim.cmd('split new')
 	obj.buffer = api.nvim_get_current_buf()
 	obj.window = api.nvim_get_current_win()
+	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
 	    vim.cmd('q')
 	end
@@ -102,6 +102,7 @@ function M:new_cheat(disable_comment, init_text)
 	vim.cmd('vert new')
 	obj.buffer = api.nvim_get_current_buf()
 	obj.window = api.nvim_get_current_win()
+	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
 	    vim.cmd('q')
 	end
@@ -110,6 +111,7 @@ function M:new_cheat(disable_comment, init_text)
 	vim.cmd('tab new')
 	obj.buffer = api.nvim_get_current_buf()
 	obj.window = api.nvim_get_current_win()
+	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
 	    vim.cmd('q')
 	end
