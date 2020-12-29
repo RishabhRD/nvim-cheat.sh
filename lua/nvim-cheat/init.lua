@@ -34,6 +34,12 @@ function M:new_cheat(disable_comment, init_text)
 	return win_buf
     end
     local function startFuzzySearch(line)
+	local function select_next(popup)
+	    popup:select_next()
+	end
+	local function select_prev(popup)
+	    popup:select_prev()
+	end
 	local function close_cancelled(popup)
 	    popup:close()
 	end
@@ -73,12 +79,18 @@ function M:new_cheat(disable_comment, init_text)
 		    ['<C-c>'] = close_cancelled,
 		    ['<C-y>'] = select_fuzzy_handler,
 		    ['<CR>'] = select_fuzzy_handler,
+		    ['<C-n>'] = select_next,
+		    ['<C-p>'] = select_prev,
+		    ['<C-j>'] = select_next,
+		    ['<C-k>'] = select_prev,
 		},
 		n = {
 		    ['<CR>'] = select_fuzzy_handler,
 		    ['q'] = close_cancelled,
 		    ['<C-c>'] = close_cancelled,
 		    ['<Esc>'] = close_cancelled,
+		    ['j'] = select_next,
+		    ['k'] = select_prev,
 		}
 	    },
 	}
