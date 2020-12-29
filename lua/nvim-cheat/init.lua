@@ -33,10 +33,70 @@ function M:new_cheat(disable_comment, init_text)
 	setBufferType(obj.buffer, 'nofile')
 	return win_buf
     end
+    local function startFuzzySearch(line)
+	local function close_cancelled(popup)
+	    popup:close()
+	end
+	local function select_fuzzy_handler(popup)
+	    popup:close(function(_, selectedLine)
+		selectedLine = selectedLine:gsub('/', ' ')
+		if line ~= '' then
+		    selectedLine = string.format('%s %s', line, selectedLine)
+		end
+		M:new_cheat(disable_comment, selectedLine)
+	    end)
+	end
+	local opts = {
+	    prompt = {
+		border = true,
+		title = 'Search',
+		highlight = 'Normal',
+		prompt_highlight = 'Normal',
+		init_text = init_text
+	    },
+	    list = {
+		title = 'Available Symbols',
+		highlight = 'Normal',
+		prompt_highlight = 'Normal',
+		border = true,
+	    },
+	    callbacks = {
+		on_job_complete = function()
+		    vim.cmd('echohl MoreMsg')
+		    vim.cmd(string.format([[echomsg '%s']],'Loading symbols for list completed!!!'))
+		    vim.cmd('echohl None')
+		end
+	    },
+	    mode = 'editor',
+	    keymaps = {
+		i = {
+		    ['<C-c>'] = close_cancelled,
+		    ['<C-y>'] = select_fuzzy_handler,
+		    ['<CR>'] = select_fuzzy_handler,
+		},
+		n = {
+		    ['<CR>'] = select_fuzzy_handler,
+		    ['q'] = close_cancelled,
+		    ['<C-c>'] = close_cancelled,
+		    ['<Esc>'] = close_cancelled,
+		}
+	    },
+	}
+	local cmd
+	line = line:gsub(' ', '')
+	if line == '' then
+	    cmd = 'curl cht.sh/:list'
+	else
+	    cmd = string.format('curl cht.sh/%s/:list', line)
+	end
+	opts.data = {
+	    cmd = cmd
+	}
+	require'popfix':new(opts)
+    end
     local function openCheat(line)
 	local firstWhiteSpace = string.find(line, '%s')
 	if firstWhiteSpace == nil then
-	    print("Provide a query")
 	    return false
 	end
 	local language = string.sub(line, 1, firstWhiteSpace - 1)
@@ -86,6 +146,7 @@ function M:new_cheat(disable_comment, init_text)
 	    api.nvim_set_current_win(win_buf_pair.win)
 	    if not openCheat(line) then
 		vim.cmd('q')
+		startFuzzySearch(line)
 	    end
 	end)
     end
@@ -96,6 +157,7 @@ function M:new_cheat(disable_comment, init_text)
 	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
 	    vim.cmd('q')
+	    startFuzzySearch(line)
 	end
     end
     local function vert_split(_, line)
@@ -105,6 +167,7 @@ function M:new_cheat(disable_comment, init_text)
 	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
 	    vim.cmd('q')
+	    startFuzzySearch(line)
 	end
     end
     local function tab(_, line)
@@ -114,6 +177,7 @@ function M:new_cheat(disable_comment, init_text)
 	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
 	    vim.cmd('q')
+	    startFuzzySearch(line)
 	end
     end
     local function close_cancelled(popup)
