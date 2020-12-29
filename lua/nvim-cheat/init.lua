@@ -106,15 +106,22 @@ function M:new_cheat(disable_comment, init_text)
 	return win_buf
     end
     local function openCheat(line)
-	local firstWhiteSpace = string.find(line, '%s')
-	if firstWhiteSpace == nil then
-	     return false
+	line = string.gsub(line, '^%s*(.-)%s*$', '%1')
+	if line == '' then
+	    return
 	end
-	local language = string.sub(line, 1, firstWhiteSpace - 1)
-	local query = string.sub(line, firstWhiteSpace + 1)
-	query = query:gsub("%s","+")
+	local firstWhiteSpace = string.find(line, '%s')
+	local language, query, cmd
+	if firstWhiteSpace ~= nil then
+	    language = string.sub(line, 1, firstWhiteSpace - 1)
+	    query = string.sub(line, firstWhiteSpace + 1)
+	    query = query:gsub("%s","+")
+	    cmd = string.format('curl cht.sh/%s/%s?T', language, query)
+	else
+	    language = line
+	    cmd = string.format('curl cht.sh/%s?T', language)
+	end
 	vim.cmd('setfiletype '..language)
-	local cmd = string.format('curl cht.sh/%s/%s?T', language, query)
 	if disable_comment then
 	    cmd = cmd..'?Q'
 	end
