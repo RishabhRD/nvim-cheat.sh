@@ -163,8 +163,10 @@ function M:new_cheat(disable_comment, init_text)
 	    local win_buf_pair =  createFloatingWindow()
 	    api.nvim_set_current_win(win_buf_pair.win)
 	    if not openCheat(line) then
-		vim.cmd('q')
-		M:new_cheat_list(disable_comment, line)
+		vim.schedule(function()
+		    vim.cmd('q')
+		    M:new_cheat_list(disable_comment, line)
+		end)
 	    end
 	end)
     end
@@ -174,8 +176,10 @@ function M:new_cheat(disable_comment, init_text)
 	obj.window = api.nvim_get_current_win()
 	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
-	    vim.cmd('q')
-	    M:new_cheat_list(disable_comment, line)
+	    vim.schedule(function()
+		vim.cmd('q')
+		M:new_cheat_list(disable_comment, line)
+	    end)
 	end
     end
     local function vert_split(_, line)
@@ -184,8 +188,10 @@ function M:new_cheat(disable_comment, init_text)
 	obj.window = api.nvim_get_current_win()
 	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
-	    vim.cmd('q')
-	    M:new_cheat_list(disable_comment, line)
+	    vim.schedule(function()
+		vim.cmd('q')
+		M:new_cheat_list(disable_comment, line)
+	    end)
 	end
     end
     local function tab(_, line)
@@ -194,8 +200,10 @@ function M:new_cheat(disable_comment, init_text)
 	obj.window = api.nvim_get_current_win()
 	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
-	    vim.cmd('q')
-	    M:new_cheat_list(disable_comment, line)
+	    vim.schedule(function()
+		vim.cmd('q')
+		M:new_cheat_list(disable_comment, line)
+	    end)
 	end
     end
     local function close_cancelled(popup)
