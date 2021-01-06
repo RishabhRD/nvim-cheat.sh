@@ -11,6 +11,78 @@ local function setBufferType(bufnr, type)
     api.nvim_buf_set_option(bufnr, 'buftype', type)
 end
 
+function M:new_cheat_list(disable_comment, init_text)
+    local function select_next(popup)
+	popup:select_next()
+    end
+    local function select_prev(popup)
+	popup:select_prev()
+    end
+    local function close_cancelled(popup)
+	popup:close()
+    end
+    local function select_fuzzy_handler(popup)
+	popup:close(function(_, selectedLine)
+	    selectedLine = selectedLine:gsub('/', ' ')
+	    if init_text ~= '' then
+		selectedLine = string.format('%s %s', init_text, selectedLine)
+	    end
+	    M:new_cheat(disable_comment, selectedLine)
+	end)
+    end
+    local opts = {
+	prompt = {
+	    border = true,
+	    title = 'Search',
+	    highlight = 'Normal',
+	    prompt_highlight = 'Normal',
+	},
+	list = {
+	    highlight = 'Normal',
+	    prompt_highlight = 'Normal',
+	    border = true,
+	},
+	callbacks = {
+	    on_job_complete = function()
+		vim.cmd('echohl MoreMsg')
+		vim.cmd(string.format([[echomsg '%s']],'Loading symbols for list completed!!!'))
+		vim.cmd('echohl None')
+	    end
+	},
+	mode = 'editor',
+	keymaps = {
+	    i = {
+		['<C-c>'] = close_cancelled,
+		['<C-y>'] = select_fuzzy_handler,
+		['<CR>'] = select_fuzzy_handler,
+		['<C-n>'] = select_next,
+		['<C-p>'] = select_prev,
+		['<C-j>'] = select_next,
+		['<C-k>'] = select_prev,
+	    },
+	    n = {
+		['<CR>'] = select_fuzzy_handler,
+		['q'] = close_cancelled,
+		['<C-c>'] = close_cancelled,
+		['<Esc>'] = close_cancelled,
+		['j'] = select_next,
+		['k'] = select_prev,
+	    }
+	},
+    }
+    local cmd
+    init_text = init_text:gsub(' ', '')
+    if init_text == '' then
+	cmd = 'curl cht.sh/:list'
+    else
+	cmd = string.format('curl cht.sh/%s/:list', init_text)
+    end
+    opts.data = {
+	cmd = cmd
+    }
+    require'popfix':new(opts)
+end
+
 function M:new_cheat(disable_comment, init_text)
     local obj = {}
     setmetatable(obj, self)
@@ -34,16 +106,22 @@ function M:new_cheat(disable_comment, init_text)
 	return win_buf
     end
     local function openCheat(line)
-	local firstWhiteSpace = string.find(line, '%s')
-	if firstWhiteSpace == nil then
-	    print("Provide a query")
-	    return false
+	line = string.gsub(line, '^%s*(.-)%s*$', '%1')
+	if line == '' then
+	    return
 	end
-	local language = string.sub(line, 1, firstWhiteSpace - 1)
-	local query = string.sub(line, firstWhiteSpace + 1)
-	query = query:gsub("%s","+")
+	local firstWhiteSpace = string.find(line, '%s')
+	local language, query, cmd
+	if firstWhiteSpace ~= nil then
+	    language = string.sub(line, 1, firstWhiteSpace - 1)
+	    query = string.sub(line, firstWhiteSpace + 1)
+	    query = query:gsub("%s","+")
+	    cmd = string.format('curl cht.sh/%s/%s?T', language, query)
+	else
+	    language = line
+	    cmd = string.format('curl cht.sh/%s?T', language)
+	end
 	vim.cmd('setfiletype '..language)
-	local cmd = string.format('curl cht.sh/%s/%s?T', language, query)
 	if disable_comment then
 	    cmd = cmd..'?Q'
 	end
@@ -85,7 +163,10 @@ function M:new_cheat(disable_comment, init_text)
 	    local win_buf_pair =  createFloatingWindow()
 	    api.nvim_set_current_win(win_buf_pair.win)
 	    if not openCheat(line) then
-		vim.cmd('q')
+		vim.schedule(function()
+		    vim.cmd('q')
+		    M:new_cheat_list(disable_comment, line)
+		end)
 	    end
 	end)
     end
@@ -95,7 +176,10 @@ function M:new_cheat(disable_comment, init_text)
 	obj.window = api.nvim_get_current_win()
 	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
-	    vim.cmd('q')
+	    vim.schedule(function()
+		vim.cmd('q')
+		M:new_cheat_list(disable_comment, line)
+	    end)
 	end
     end
     local function vert_split(_, line)
@@ -104,7 +188,10 @@ function M:new_cheat(disable_comment, init_text)
 	obj.window = api.nvim_get_current_win()
 	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
-	    vim.cmd('q')
+	    vim.schedule(function()
+		vim.cmd('q')
+		M:new_cheat_list(disable_comment, line)
+	    end)
 	end
     end
     local function tab(_, line)
@@ -113,7 +200,10 @@ function M:new_cheat(disable_comment, init_text)
 	obj.window = api.nvim_get_current_win()
 	setBufferType(obj.buffer, 'nofile')
 	if not openCheat(line) then
-	    vim.cmd('q')
+	    vim.schedule(function()
+		vim.cmd('q')
+		M:new_cheat_list(disable_comment, line)
+	    end)
 	end
     end
     local function close_cancelled(popup)
