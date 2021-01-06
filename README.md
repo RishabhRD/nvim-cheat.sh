@@ -20,10 +20,12 @@ Plug 'RishabhRD/nvim-cheat.sh'
 
 ## Working
 
-The plugin exports 2 commands:
+The plugin exports 4 commands:
 
 - Cheat
 - CheatWithoutComments
+- CheatList
+- CheatListWithoutComments
 
 Each command accepts 0 or more arguments. Arguments decide the initial prompt
 text.
@@ -43,6 +45,9 @@ respectively.
 
 Second and fourth command opens the prompt with initial prompt text
 ``cpp reverse number`` to search with and without comments respectively.
+
+CheatList and CheatListWithoutComments provides fuzzy finding from all available symbols.
+
 
 ## How to query
 
