@@ -86,6 +86,8 @@ In insert mode:
 - **\<C-v\>** : Open result in a vertical split.
 - **\<C-y\>** : Open result in floating window.
 - **\<C-c\>** : Close window without any action.
+- **\<C-p\>** : Previous in history
+- **\<C-n\>** : Next in history
 
 In normal mode:
 
@@ -96,3 +98,5 @@ In normal mode:
 - **\<C-c\>** : Close window without any action.
 - **\<Esc\>** : Close window without any action.
 - **q** : Close window without any action.
+- **k** : Previous in history
+- **j** : Next in history
