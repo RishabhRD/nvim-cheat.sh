@@ -31,13 +31,14 @@ end
 local function createFloatingWindow()
   local editorWidth = api.nvim_get_option('columns')
   local editorHeight = api.nvim_get_option("lines")
-  local opts = {}
-  opts.height = math.ceil(editorHeight * 0.8 - 4)
-  opts.width = math.ceil(editorWidth * 0.8)
+  local opts = {
+    height = math.ceil(editorHeight * 0.8 - 4),
+    width = math.ceil(editorWidth * 0.8),
+    border = true,
+    title = 'Cheat Sheet',
+  }
   opts.row = math.ceil((editorHeight - opts.height) /2 - 1)
   opts.col = math.ceil((editorWidth - opts.width) /2)
-  opts.border = true
-  opts.title = 'Cheat Sheet'
   local win_buf = floating_win.create_win(opts)
   api.nvim_buf_set_option(win_buf.buf, 'bufhidden', 'wipe')
   api.nvim_win_set_option(win_buf.win, 'winhl', 'Normal:Normal')
