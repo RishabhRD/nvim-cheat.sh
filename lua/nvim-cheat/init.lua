@@ -173,6 +173,19 @@ local function setupResultWindow(self, init_text, disable_comment)
   local tabFunc = createCloseFunction(tab)
   local cancelFunc = createCloseFunction(close)
   local floatingFunc = createCloseFunction(edit)
+  local defaultFunc
+  local defaultWindowLayout = vim.g.cheat_default_window_layout
+  if defaultWindowLayout == nil then
+    defaultFunc = floatingFunc
+  elseif defaultWindowLayout == 'split' then
+    defaultFunc = splitFunc
+  elseif defaultWindowLayout == 'vertical_split' then
+    defaultFunc = vertSplitFunc
+  elseif defaultWindowLayout == 'tab' then
+    defaultFunc = tabFunc
+  else
+    defaultFunc = floating_win
+  end
   local opts = {
     prompt = {
       border = true,
@@ -191,10 +204,10 @@ local function setupResultWindow(self, init_text, disable_comment)
         ['<C-y>'] = floatingFunc,
         ['<C-n>'] = next_history,
         ['<C-p>'] = prev_history,
-        ['<CR>'] = floatingFunc,
+        ['<CR>'] = defaultFunc,
       },
       n = {
-        ['<CR>'] = floatingFunc,
+        ['<CR>'] = defaultFunc,
         ['<C-v>'] = vertSplitFunc,
         ['<C-x>'] = splitFunc,
         ['<C-t>'] = tabFunc,
@@ -214,7 +227,7 @@ local function setupResultWindow(self, init_text, disable_comment)
   -- be removed.
   local keymap = {
     i = {
-      ['<CR>'] = floatingFunc,
+      ['<CR>'] = defaultFunc,
     }
   }
   mapping.add_keymap(popup.prompt.buffer, keymap, popup)
