@@ -6,9 +6,26 @@ local job = require'popfix.job'
 local api = vim.api
 local floating_win = require'popfix.floating_win'
 local mapping = require'popfix.mappings'
+local historyTable = {}
+local historySize = 0
 
 local function setBufferType(bufnr, type)
     api.nvim_buf_set_option(bufnr, 'buftype', type)
+end
+
+local function putInHistory(str)
+    if historyTable[historySize + 1] == '' then
+	historyTable[historySize + 1] = nil
+    end
+    if str == nil or str == '' then return end
+    historyTable[historySize + 1] = str
+    historySize = historySize + 1
+end
+
+local function stopInsert()
+    vim.schedule(function()
+	vim.cmd('stopinsert')
+    end)
 end
 
 function M:new_cheat_list(disable_comment, init_text)
@@ -85,6 +102,7 @@ end
 
 function M:new_cheat(disable_comment, init_text)
     local obj = {}
+    obj.currentHistoryIndex = historySize + 1
     setmetatable(obj, self)
     local function createFloatingWindow()
 	local editorWidth = api.nvim_get_option('columns')
@@ -160,6 +178,7 @@ function M:new_cheat(disable_comment, init_text)
     end
     local function edit(_, line)
 	vim.schedule(function()
+	    putInHistory(line)
 	    local win_buf_pair =  createFloatingWindow()
 	    api.nvim_set_current_win(win_buf_pair.win)
 	    if not openCheat(line) then
@@ -171,6 +190,7 @@ function M:new_cheat(disable_comment, init_text)
 	end)
     end
     local function split(_, line)
+	putInHistory(line)
 	vim.cmd('split new')
 	obj.buffer = api.nvim_get_current_buf()
 	obj.window = api.nvim_get_current_win()
@@ -183,6 +203,7 @@ function M:new_cheat(disable_comment, init_text)
 	end
     end
     local function vert_split(_, line)
+	putInHistory(line)
 	vim.cmd('vert new')
 	obj.buffer = api.nvim_get_current_buf()
 	obj.window = api.nvim_get_current_win()
@@ -195,6 +216,7 @@ function M:new_cheat(disable_comment, init_text)
 	end
     end
     local function tab(_, line)
+	putInHistory(line)
 	vim.cmd('tab new')
 	obj.buffer = api.nvim_get_current_buf()
 	obj.window = api.nvim_get_current_win()
@@ -206,8 +228,11 @@ function M:new_cheat(disable_comment, init_text)
 	    end)
 	end
     end
+    local function close(_, line)
+	putInHistory(line)
+    end
     local function close_cancelled(popup)
-	popup:close()
+	popup:close(close)
 	vim.cmd('stopinsert')
     end
     local function edit_close(popup)
@@ -230,6 +255,27 @@ function M:new_cheat(disable_comment, init_text)
 	popup:close(vert_split)
 	vim.cmd('stopinsert')
     end
+    local function next_history(popup)
+	if obj.currentHistoryIndex > historySize then return end
+	obj.currentHistoryIndex = obj.currentHistoryIndex + 1
+	popup:set_prompt_text(historyTable[obj.currentHistoryIndex])
+    end
+    local function prev_history(popup)
+	if obj.currentHistoryIndex == historySize + 1 then
+	    historyTable[historySize + 1] = popup:get_prompt_text()
+	end
+	if obj.currentHistoryIndex == 1 then return end
+	obj.currentHistoryIndex = obj.currentHistoryIndex - 1
+	popup:set_prompt_text(historyTable[obj.currentHistoryIndex])
+    end
+    local function next_history_normal(popup)
+	next_history(popup)
+	stopInsert()
+    end
+    local function prev_history_normal(popup)
+	prev_history(popup)
+	stopInsert()
+    end
     local opts = {
 	prompt = {
 	    border = true,
@@ -246,6 +292,8 @@ function M:new_cheat(disable_comment, init_text)
 		['<C-t>'] = tab_close,
 		['<C-c>'] = close_cancelled,
 		['<C-y>'] = edit_close,
+		['<C-n>'] = next_history,
+		['<C-p>'] = prev_history,
 		['<CR>'] = edit_close,
 	    },
 	    n = {
@@ -254,10 +302,15 @@ function M:new_cheat(disable_comment, init_text)
 		['<C-x>'] = split_close,
 		['<C-t>'] = tab_close,
 		['q'] = close_cancelled,
+		['j'] = next_history_normal,
+		['k'] = prev_history_normal,
 		['<C-c>'] = close_cancelled,
 		['<Esc>'] = close_cancelled,
 	    }
 	},
+	callbacks = {
+	    close = close,
+	}
     }
     local popup = popfix:new(opts)
     -- This part should not be here! This is a popfix bug. Once solved it would
