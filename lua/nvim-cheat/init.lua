@@ -28,245 +28,136 @@ local function stopInsert()
     end)
 end
 
-function M:new_cheat_list(disable_comment, init_text)
-    local function select_next(popup)
-	popup:select_next()
-    end
-    local function select_prev(popup)
-	popup:select_prev()
-    end
-    local function close_cancelled(popup)
-	popup:close()
-    end
-    local function select_fuzzy_handler(popup)
-	popup:close(function(_, selectedLine)
-	    selectedLine = selectedLine:gsub('/', ' ')
-	    if init_text ~= '' then
-		selectedLine = string.format('%s %s', init_text, selectedLine)
-	    end
-	    M:new_cheat(disable_comment, selectedLine)
-	end)
-    end
-    local opts = {
-	prompt = {
-	    border = true,
-	    title = 'Search',
-	    highlight = 'Normal',
-	    prompt_highlight = 'Normal',
-	},
-	list = {
-	    highlight = 'Normal',
-	    prompt_highlight = 'Normal',
-	    border = true,
-	},
-	callbacks = {
-	    on_job_complete = function()
-		vim.cmd('echohl MoreMsg')
-		vim.cmd(string.format([[echomsg '%s']],'Loading symbols for list completed!!!'))
-		vim.cmd('echohl None')
-	    end
-	},
-	mode = 'editor',
-	keymaps = {
-	    i = {
-		['<C-c>'] = close_cancelled,
-		['<C-y>'] = select_fuzzy_handler,
-		['<CR>'] = select_fuzzy_handler,
-		['<C-n>'] = select_next,
-		['<C-p>'] = select_prev,
-		['<C-j>'] = select_next,
-		['<C-k>'] = select_prev,
-	    },
-	    n = {
-		['<CR>'] = select_fuzzy_handler,
-		['q'] = close_cancelled,
-		['<C-c>'] = close_cancelled,
-		['<Esc>'] = close_cancelled,
-		['j'] = select_next,
-		['k'] = select_prev,
-	    }
-	},
-    }
-    local cmd
-    init_text = init_text:gsub(' ', '')
-    if init_text == '' then
-	cmd = 'curl cht.sh/:list'
-    else
-	cmd = string.format('curl cht.sh/%s/:list', init_text)
-    end
-    opts.data = {
-	cmd = cmd
-    }
-    require'popfix':new(opts)
+local function createFloatingWindow()
+    local editorWidth = api.nvim_get_option('columns')
+    local editorHeight = api.nvim_get_option("lines")
+    local opts = {}
+    opts.height = math.ceil(editorHeight * 0.8 - 4)
+    opts.width = math.ceil(editorWidth * 0.8)
+    opts.row = math.ceil((editorHeight - opts.height) /2 - 1)
+    opts.col = math.ceil((editorWidth - opts.width) /2)
+    opts.border = true
+    opts.title = 'Cheat Sheet'
+    local win_buf = floating_win.create_win(opts)
+    api.nvim_buf_set_option(win_buf.buf, 'bufhidden', 'wipe')
+    api.nvim_win_set_option(win_buf.win, 'winhl', 'Normal:Normal')
+    api.nvim_win_set_option(win_buf.win, 'number', true)
+    api.nvim_set_current_win(win_buf.win)
+    return win_buf
 end
 
-function M:new_cheat(disable_comment, init_text)
-    local obj = {}
-    obj.currentHistoryIndex = historySize + 1
-    setmetatable(obj, self)
-    local function createFloatingWindow()
-	local editorWidth = api.nvim_get_option('columns')
-	local editorHeight = api.nvim_get_option("lines")
-	local opts = {}
-	opts.height = math.ceil(editorHeight * 0.8 - 4)
-	opts.width = math.ceil(editorWidth * 0.8)
-	opts.row = math.ceil((editorHeight - opts.height) /2 - 1)
-	opts.col = math.ceil((editorWidth - opts.width) /2)
-	opts.border = true
-	opts.title = 'Cheat Sheet'
-	local win_buf = floating_win.create_win(opts)
-	api.nvim_buf_set_option(win_buf.buf, 'bufhidden', 'wipe')
-	api.nvim_win_set_option(win_buf.win, 'winhl', 'Normal:Normal')
-	api.nvim_win_set_option(win_buf.win, 'number', true)
-	obj.window = win_buf.win
-	obj.buffer = win_buf.buf
-	setBufferType(obj.buffer, 'nofile')
-	return win_buf
+local function openCheat(self, line, disable_comment)
+    line = string.gsub(line, '^%s*(.-)%s*$', '%1')
+    if line == '' then
+	return
     end
-    local function openCheat(line)
-	line = string.gsub(line, '^%s*(.-)%s*$', '%1')
-	if line == '' then
-	    return
-	end
-	local firstWhiteSpace = string.find(line, '%s')
-	local language, query, cmd
-	if firstWhiteSpace ~= nil then
-	    language = string.sub(line, 1, firstWhiteSpace - 1)
-	    query = string.sub(line, firstWhiteSpace + 1)
-	    query = query:gsub("%s","+")
-	    cmd = string.format('curl cht.sh/%s/%s?T', language, query)
-	else
-	    language = line
-	    cmd = string.format('curl cht.sh/%s?T', language)
-	end
-	vim.cmd('setfiletype '..language)
-	if disable_comment then
-	    cmd = cmd..'?Q'
-	end
-	local function addData(_, newLine)
-	    vim.schedule(function()
-		if obj.buffer then
-		    if api.nvim_buf_is_valid(obj.buffer) then
-			local lineCount = api.nvim_buf_line_count(obj.buffer)
-			api.nvim_buf_set_lines(obj.buffer, lineCount, lineCount,
-			false, {newLine})
-		    else
-			if obj.job then
-			    obj.job:shutdown()
-			    obj.job = nil
-			end
+    local firstWhiteSpace = string.find(line, '%s')
+    local language, query, cmd
+    if firstWhiteSpace ~= nil then
+	language = string.sub(line, 1, firstWhiteSpace - 1)
+	query = string.sub(line, firstWhiteSpace + 1)
+	query = query:gsub("%s","+")
+	cmd = string.format('curl cht.sh/%s/%s?T', language, query)
+    else
+	language = line
+	cmd = string.format('curl cht.sh/%s?T', language)
+    end
+    vim.cmd('setfiletype '..language)
+    if disable_comment then
+	cmd = cmd..'?Q'
+    end
+    local function addData(_, newLine)
+	vim.schedule(function()
+	    if self.buffer then
+		if api.nvim_buf_is_valid(self.buffer) then
+		    local lineCount = api.nvim_buf_line_count(self.buffer)
+		    api.nvim_buf_set_lines(self.buffer, lineCount, lineCount,
+		    false, {newLine})
+		else
+		    if self.job then
+			self.job:shutdown()
+			self.job = nil
 		    end
 		end
-	    end)
-	end
-	local command, args = util.getArgs(cmd)
-	obj.job = job:new{
-	    command = command,
-	    args = args,
-	    on_stdout = addData,
-	    on_exit = function()
-		obj.job = nil
-		vim.schedule(function()
-		    vim.cmd('echohl MoreMsg')
-		    vim.cmd(string.format([[echomsg '%s']],'Finished!!!'))
-		    vim.cmd('echohl None')
-		end)
-	    end,
-	}
-	obj.job:start()
-	return true
-    end
-    local function edit(_, line)
-	vim.schedule(function()
-	    putInHistory(line)
-	    local win_buf_pair =  createFloatingWindow()
-	    api.nvim_set_current_win(win_buf_pair.win)
-	    if not openCheat(line) then
-		vim.schedule(function()
-		    vim.cmd('q')
-		    M:new_cheat_list(disable_comment, line)
-		end)
 	    end
 	end)
     end
-    local function split(_, line)
-	putInHistory(line)
-	vim.cmd('split new')
-	obj.buffer = api.nvim_get_current_buf()
-	obj.window = api.nvim_get_current_win()
-	setBufferType(obj.buffer, 'nofile')
-	if not openCheat(line) then
+    local command, args = util.getArgs(cmd)
+    self.job = job:new{
+	command = command,
+	args = args,
+	on_stdout = addData,
+	on_exit = function()
+	    self.job = nil
 	    vim.schedule(function()
-		vim.cmd('q')
-		M:new_cheat_list(disable_comment, line)
+		vim.cmd('echohl MoreMsg')
+		vim.cmd(string.format([[echomsg '%s']],'Finished!!!'))
+		vim.cmd('echohl None')
 	    end)
+	end,
+    }
+    self.job:start()
+    return true
+end
+
+local function openCheatList(disable_comment, line)
+    vim.schedule(function()
+	vim.cmd('q')
+	require'nvim-cheat.cheatList':new_cheat_list(disable_comment, line)
+    end)
+end
+
+local function createCloseFunction(func)
+    return function(popup)
+	popup:close(func)
+	vim.cmd('stopinsert')
+    end
+end
+
+local function getWrapperForVimCmdString(str)
+    return function()
+	vim.cmd(str)
+    end
+end
+
+local function setupResultWindow(self, init_text, disable_comment)
+    local function initCheatWindow(line, contextWiseWindowFunction)
+	putInHistory(line)
+	contextWiseWindowFunction()
+	self.buffer = api.nvim_get_current_buf()
+	self.window = api.nvim_get_current_win()
+	setBufferType(self.buffer, 'nofile')
+	if not openCheat(self, line, disable_comment) then
+	    openCheatList(disable_comment, line)
 	end
+    end
+    local function edit(_, line)
+	initCheatWindow(line, createFloatingWindow)
+    end
+    local function split(_, line)
+	initCheatWindow(line, getWrapperForVimCmdString('split new'))
     end
     local function vert_split(_, line)
-	putInHistory(line)
-	vim.cmd('vert new')
-	obj.buffer = api.nvim_get_current_buf()
-	obj.window = api.nvim_get_current_win()
-	setBufferType(obj.buffer, 'nofile')
-	if not openCheat(line) then
-	    vim.schedule(function()
-		vim.cmd('q')
-		M:new_cheat_list(disable_comment, line)
-	    end)
-	end
+	initCheatWindow(line, getWrapperForVimCmdString('vert new'))
     end
     local function tab(_, line)
-	putInHistory(line)
-	vim.cmd('tab new')
-	obj.buffer = api.nvim_get_current_buf()
-	obj.window = api.nvim_get_current_win()
-	setBufferType(obj.buffer, 'nofile')
-	if not openCheat(line) then
-	    vim.schedule(function()
-		vim.cmd('q')
-		M:new_cheat_list(disable_comment, line)
-	    end)
-	end
+	initCheatWindow(line, getWrapperForVimCmdString('tab new'))
     end
     local function close(_, line)
 	putInHistory(line)
     end
-    local function close_cancelled(popup)
-	popup:close(close)
-	vim.cmd('stopinsert')
-    end
-    local function edit_close(popup)
-	popup:close(edit)
-	vim.cmd('stopinsert')
-    end
-    local function tab_close(popup)
-	if obj.job then
-	    obj.job:shutdown()
-	    obj.job = nil
-	end
-	popup:close(tab)
-	vim.cmd('stopinsert')
-    end
-    local function split_close(popup)
-	popup:close(split)
-	vim.cmd('stopinsert')
-    end
-    local function vert_split_close(popup)
-	popup:close(vert_split)
-	vim.cmd('stopinsert')
-    end
     local function next_history(popup)
-	if obj.currentHistoryIndex > historySize then return end
-	obj.currentHistoryIndex = obj.currentHistoryIndex + 1
-	popup:set_prompt_text(historyTable[obj.currentHistoryIndex])
+	if self.currentHistoryIndex > historySize then return end
+	self.currentHistoryIndex = self.currentHistoryIndex + 1
+	popup:set_prompt_text(historyTable[self.currentHistoryIndex])
     end
     local function prev_history(popup)
-	if obj.currentHistoryIndex == historySize + 1 then
+	if self.currentHistoryIndex == historySize + 1 then
 	    historyTable[historySize + 1] = popup:get_prompt_text()
 	end
-	if obj.currentHistoryIndex == 1 then return end
-	obj.currentHistoryIndex = obj.currentHistoryIndex - 1
-	popup:set_prompt_text(historyTable[obj.currentHistoryIndex])
+	if self.currentHistoryIndex == 1 then return end
+	self.currentHistoryIndex = self.currentHistoryIndex - 1
+	popup:set_prompt_text(historyTable[self.currentHistoryIndex])
     end
     local function next_history_normal(popup)
 	next_history(popup)
@@ -276,6 +167,11 @@ function M:new_cheat(disable_comment, init_text)
 	prev_history(popup)
 	stopInsert()
     end
+    local vertSplitFunc = createCloseFunction(vert_split)
+    local splitFunc = createCloseFunction(split)
+    local tabFunc = createCloseFunction(tab)
+    local cancelFunc = createCloseFunction(close)
+    local floatingFunc = createCloseFunction(edit)
     local opts = {
 	prompt = {
 	    border = true,
@@ -287,25 +183,25 @@ function M:new_cheat(disable_comment, init_text)
 	mode = 'editor',
 	keymaps = {
 	    i = {
-		['<C-v>'] = vert_split_close,
-		['<C-x>'] = split_close,
-		['<C-t>'] = tab_close,
-		['<C-c>'] = close_cancelled,
-		['<C-y>'] = edit_close,
+		['<C-v>'] = vertSplitFunc,
+		['<C-x>'] = splitFunc,
+		['<C-t>'] = tabFunc,
+		['<C-c>'] = cancelFunc,
+		['<C-y>'] = floatingFunc,
 		['<C-n>'] = next_history,
 		['<C-p>'] = prev_history,
-		['<CR>'] = edit_close,
+		['<CR>'] = floatingFunc,
 	    },
 	    n = {
-		['<CR>'] = edit_close,
-		['<C-v>'] = vert_split_close,
-		['<C-x>'] = split_close,
-		['<C-t>'] = tab_close,
-		['q'] = close_cancelled,
+		['<CR>'] = floatingFunc,
+		['<C-v>'] = vertSplitFunc,
+		['<C-x>'] = splitFunc,
+		['<C-t>'] = tabFunc,
+		['q'] = cancelFunc,
 		['j'] = next_history_normal,
 		['k'] = prev_history_normal,
-		['<C-c>'] = close_cancelled,
-		['<Esc>'] = close_cancelled,
+		['<C-c>'] = cancelFunc,
+		['<Esc>'] = cancelFunc,
 	    }
 	},
 	callbacks = {
@@ -317,10 +213,17 @@ function M:new_cheat(disable_comment, init_text)
     -- be removed.
     local keymap = {
 	i = {
-	    ['<CR>'] = edit_close,
+	    ['<CR>'] = floatingFunc,
 	}
     }
     mapping.add_keymap(popup.prompt.buffer, keymap, popup)
+end
+
+function M:new_cheat(disable_comment, init_text)
+    local obj = {}
+    obj.currentHistoryIndex = historySize + 1
+    setmetatable(obj, self)
+    setupResultWindow(obj, init_text, disable_comment)
     return obj
 end
 
