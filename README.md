@@ -48,6 +48,23 @@ Second and fourth command opens the prompt with initial prompt text
 
 CheatList and CheatListWithoutComments provides fuzzy finding from all available symbols.
 
+## Changing result layout
+By default result is displayed in a floating window. However, this may be
+disturbing for some users. Hence, nvim-cheat.sh provides a global variable
+`g:cheat_default_window_layout` with which users can set their default layout.
+
+Example:
+```lua
+vim.g.cheat_default_window_layout = 'split'
+```
+
+Possible values are:
+- split
+- vertical_split
+- tab
+- float
+
+**Note:** If provided any wrong value, float will be used.
 
 ## How to query
 
@@ -80,21 +97,24 @@ Keymaps for prompt are:
 
 In insert mode:
 
-- **\<CR\>** : Open result in floating window.
+- **\<CR\>** : Open result in default layout.
 - **\<C-x\>** : Open result in horizontal split.
 - **\<C-t\>** : Open result in a new tab.
 - **\<C-v\>** : Open result in a vertical split.
 - **\<C-y\>** : Open result in floating window.
+- **\<C-f\>** : Open result in floating window.
 - **\<C-c\>** : Close window without any action.
 - **\<C-p\>** : Previous in history
 - **\<C-n\>** : Next in history
 
 In normal mode:
 
-- **\<CR\>** : Open result in floating window.
+- **\<CR\>** : Open result in default layout.
 - **\<C-x\>** : Open result in horizontal split.
 - **\<C-t\>** : Open result in a new tab.
 - **\<C-v\>** : Open result in a vertical split.
+- **\<C-y\>** : Open result in floating window.
+- **\<C-f\>** : Open result in floating window.
 - **\<C-c\>** : Close window without any action.
 - **\<Esc\>** : Close window without any action.
 - **q** : Close window without any action.

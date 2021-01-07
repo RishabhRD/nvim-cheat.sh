@@ -183,6 +183,8 @@ local function setupResultWindow(self, init_text, disable_comment)
     defaultFunc = vertSplitFunc
   elseif defaultWindowLayout == 'tab' then
     defaultFunc = tabFunc
+  elseif defaultWindowLayout == 'float' then
+    defaultFunc = floatingFunc
   else
     defaultFunc = floating_win
   end
@@ -201,6 +203,7 @@ local function setupResultWindow(self, init_text, disable_comment)
         ['<C-x>'] = splitFunc,
         ['<C-t>'] = tabFunc,
         ['<C-c>'] = cancelFunc,
+        ['<C-f>'] = floatingFunc,
         ['<C-y>'] = floatingFunc,
         ['<C-n>'] = next_history,
         ['<C-p>'] = prev_history,
@@ -209,6 +212,8 @@ local function setupResultWindow(self, init_text, disable_comment)
       n = {
         ['<CR>'] = defaultFunc,
         ['<C-v>'] = vertSplitFunc,
+        ['<C-f>'] = floatingFunc,
+        ['<C-y>'] = floatingFunc,
         ['<C-x>'] = splitFunc,
         ['<C-t>'] = tabFunc,
         ['q'] = cancelFunc,
